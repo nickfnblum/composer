@@ -78,7 +78,13 @@ class AllFunctionalTest extends TestCase
             }
         }
 
-        $proc = new Process((defined('PHP_BINARY') ? escapeshellcmd(PHP_BINARY) : 'php').' -dphar.readonly=0 '.escapeshellarg('./bin/compile'), $target);
+        // TODO in v2.3 always call with an array
+        if (method_exists('Symfony\Component\Process\Process', 'fromShellCommandline')) {
+            $proc = new Process(array((defined('PHP_BINARY') ? PHP_BINARY : 'php'), '-dphar.readonly=0', './bin/compile'), $target);
+        } else {
+            // @phpstan-ignore-next-line
+            $proc = new Process((defined('PHP_BINARY') ? escapeshellcmd(PHP_BINARY) : 'php').' -dphar.readonly=0 '.escapeshellarg('./bin/compile'), $target);
+        }
         $exitcode = $proc->run();
 
         if ($exitcode !== 0 || trim($proc->getOutput())) {
@@ -110,8 +116,15 @@ class AllFunctionalTest extends TestCase
             'COMPOSER_CACHE_DIR' => $this->testDir.'cache',
         );
 
-        $cmd = (defined('PHP_BINARY') ? escapeshellcmd(PHP_BINARY) : 'php') .' '.escapeshellarg(self::$pharPath).' --no-ansi '.$testData['RUN'];
-        $proc = new Process($cmd, $this->testDir, $env, null, 300);
+        // TODO in v2.3 always call with an array
+        if (method_exists('Symfony\Component\Process\Process', 'fromShellCommandline')) {
+            $cmd = array((defined('PHP_BINARY') ? PHP_BINARY : 'php'), self::$pharPath, '--no-ansi', $testData['RUN']);
+            $proc = new Process($cmd, $this->testDir, $env, null, 300);
+        } else {
+            $cmd = (defined('PHP_BINARY') ? escapeshellcmd(PHP_BINARY) : 'php') .' '.escapeshellarg(self::$pharPath).' --no-ansi '.$testData['RUN'];
+            // @phpstan-ignore-next-line
+            $proc = new Process($cmd, $this->testDir, $env, null, 300);
+        }
         $output = '';
 
         $exitcode = $proc->run(function ($type, $buffer) use (&$output) {
@@ -181,7 +194,7 @@ class AllFunctionalTest extends TestCase
 
     private function parseTestFile($file)
     {
-        $tokens = preg_split('#(?:^|\n*)--([A-Z-]+)--\n#', file_get_contents($file), null, PREG_SPLIT_DELIM_CAPTURE);
+        $tokens = preg_split('#(?:^|\n*)--([A-Z-]+)--\n#', file_get_contents($file), -1, PREG_SPLIT_DELIM_CAPTURE);
         $data = array();
         $section = null;
 

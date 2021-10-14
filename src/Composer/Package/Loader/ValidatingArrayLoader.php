@@ -27,12 +27,19 @@ class ValidatingArrayLoader implements LoaderInterface
     const CHECK_UNBOUND_CONSTRAINTS = 1;
     const CHECK_STRICT_CONSTRAINTS = 2;
 
+    /** @var LoaderInterface */
     private $loader;
+    /** @var VersionParser */
     private $versionParser;
+    /** @var string[] */
     private $errors;
+    /** @var string[] */
     private $warnings;
+    /** @var mixed[] */
     private $config;
+    /** @var bool */
     private $strictName;
+    /** @var int One or more of self::CHECK_* constants */
     private $flags;
 
     public function __construct(LoaderInterface $loader, $strictName = true, VersionParser $parser = null, $flags = 0)
@@ -179,8 +186,8 @@ class ValidatingArrayLoader implements LoaderInterface
                 unset($this->config['support']['email']);
             }
 
-            if (isset($this->config['support']['irc']) && !$this->filterUrl($this->config['support']['irc'], array('irc'))) {
-                $this->warnings[] = 'support.irc : invalid value ('.$this->config['support']['irc'].'), must be a irc://<server>/<channel> URL';
+            if (isset($this->config['support']['irc']) && !$this->filterUrl($this->config['support']['irc'], array('irc', 'ircs'))) {
+                $this->warnings[] = 'support.irc : invalid value ('.$this->config['support']['irc'].'), must be a irc://<server>/<channel> or ircs:// URL';
                 unset($this->config['support']['irc']);
             }
 
@@ -347,6 +354,13 @@ class ValidatingArrayLoader implements LoaderInterface
                 $this->errors[] = 'extra.branch-alias : must be an array of versions => aliases';
             } else {
                 foreach ($this->config['extra']['branch-alias'] as $sourceBranch => $targetBranch) {
+                    if (!is_string($targetBranch)) {
+                        $this->warnings[] = 'extra.branch-alias.'.$sourceBranch.' : the target branch ('.json_encode($targetBranch).') must be a string, "'.gettype($targetBranch).'" received.';
+                        unset($this->config['extra']['branch-alias'][$sourceBranch]);
+
+                        continue;
+                    }
+
                     // ensure it is an alias to a -dev package
                     if ('-dev' !== substr($targetBranch, -4)) {
                         $this->warnings[] = 'extra.branch-alias.'.$sourceBranch.' : the target branch ('.$targetBranch.') must end in -dev';
@@ -381,7 +395,7 @@ class ValidatingArrayLoader implements LoaderInterface
         }
 
         $package = $this->loader->load($this->config, $class);
-        $this->config = null;
+        $this->config = array();
 
         return $package;
     }

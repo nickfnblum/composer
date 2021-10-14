@@ -20,23 +20,39 @@ use Symfony\Component\Process\Process;
  */
 class Perforce
 {
+    /** @var string */
     protected $path;
+    /** @var ?string */
     protected $p4Depot;
+    /** @var string */
     protected $p4Client;
+    /** @var ?string */
     protected $p4User;
+    /** @var ?string */
     protected $p4Password;
+    /** @var int */
     protected $p4Port;
+    /** @var string */
     protected $p4Stream;
+    /** @var string */
     protected $p4ClientSpec;
+    /** @var ?string */
     protected $p4DepotType;
+    /** @var ?string */
     protected $p4Branch;
+    /** @var ProcessExecutor */
     protected $process;
+    /** @var string */
     protected $uniquePerforceClientName;
+    /** @var bool */
     protected $windowsFlag;
+    /** @var string */
     protected $commandResult;
 
+    /** @var IOInterface */
     protected $io;
 
+    /** @var Filesystem */
     protected $filesystem;
 
     public function __construct($repoConfig, $port, $path, ProcessExecutor $process, $isWindows, IOInterface $io)
@@ -160,7 +176,7 @@ class Perforce
 
     public function isStream()
     {
-        return (strcmp($this->p4DepotType, 'stream') === 0);
+        return is_string($this->p4DepotType) && (strcmp($this->p4DepotType, 'stream') === 0);
     }
 
     public function getStream()
@@ -204,13 +220,11 @@ class Perforce
     public function queryP4User()
     {
         $this->getUser();
-        if (strlen($this->p4User) > 0) {
+        if (strlen((string) $this->p4User) > 0) {
             return;
         }
         $this->p4User = $this->getP4variable('P4USER');
-        // https://github.com/phpstan/phpstan/issues/5129
-        // @phpstan-ignore-next-line
-        if (strlen($this->p4User) > 0) {
+        if (strlen((string) $this->p4User) > 0) {
             return;
         }
         $this->p4User = $this->io->ask('Enter P4 User:');
@@ -264,7 +278,7 @@ class Perforce
             return $this->p4Password;
         }
         $password = $this->getP4variable('P4PASSWD');
-        if (strlen($password) <= 0) {
+        if (strlen((string) $password) <= 0) {
             $password = $this->io->askAndHideAnswer('Enter password for Perforce user ' . $this->getUser() . ': ');
         }
         $this->p4Password = $password;

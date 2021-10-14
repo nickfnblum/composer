@@ -17,6 +17,7 @@ use Composer\Package\RootPackageInterface;
 use Composer\Package\PackageInterface;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Util\Filesystem;
+use Composer\Util\Platform;
 use Composer\Util\Silencer;
 use Symfony\Component\Process\ExecutableFinder;
 use Composer\Package\Loader\ArrayLoader;
@@ -27,6 +28,9 @@ abstract class TestCase extends PolyfillTestCase
     private static $parser;
     private static $executableCache = array();
 
+    /**
+     * @return string
+     */
     public static function getUniqueTmpDirectory()
     {
         $attempts = 5;
@@ -94,7 +98,7 @@ abstract class TestCase extends PolyfillTestCase
                     $arrayLoader->parseLinks(
                         $package->getName(),
                         $package->getPrettyVersion(),
-                        $opts['description'],
+                        $opts['method'],
                         $config[$type]
                     )
                 );
@@ -150,5 +154,25 @@ abstract class TestCase extends PolyfillTestCase
         } else {
             parent::setExpectedException($exception, $message, $code);
         }
+    }
+
+    /**
+     * Transforms an escaped non-Windows command to match Windows escaping.
+     *
+     * @param string $cmd
+     *
+     * @return string The transformed command
+     */
+    protected function getCmd($cmd)
+    {
+        if (Platform::isWindows()) {
+            $cmd = preg_replace_callback("/('[^']*')/", function ($m) {
+                // Double-quotes are used only when needed
+                $char = (strpbrk($m[1], " \t^&|<>()") !== false || $m[1] === "''") ? '"' : '';
+                return str_replace("'", $char, $m[1]);
+            }, $cmd);
+        }
+
+        return $cmd;
     }
 }

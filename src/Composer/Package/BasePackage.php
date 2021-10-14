@@ -24,6 +24,7 @@ abstract class BasePackage implements PackageInterface
 {
     /**
      * @phpstan-var array<string, array{description: string, method: Link::TYPE_*}>
+     * @internal
      */
     public static $supportedLinkTypes = array(
         'require' => array('description' => 'requires', 'method' => Link::TYPE_REQUIRE),
@@ -39,6 +40,7 @@ abstract class BasePackage implements PackageInterface
     const STABILITY_ALPHA = 15;
     const STABILITY_DEV = 20;
 
+    /** @var array<string, self::STABILITY_*> */
     public static $stabilities = array(
         'stable' => self::STABILITY_STABLE,
         'RC' => self::STABILITY_RC,
@@ -215,6 +217,10 @@ abstract class BasePackage implements PackageInterface
                 break;
             default:
                 throw new \UnexpectedValueException('Display mode '.$displayMode.' is not supported');
+        }
+
+        if (null === $reference) {
+            return $this->getPrettyVersion();
         }
 
         // if source reference is a sha1 hash -- truncate

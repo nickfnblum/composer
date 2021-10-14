@@ -21,8 +21,11 @@ use Composer\Downloader\TransportException;
  */
 class AuthHelper
 {
+    /** @var IOInterface */
     protected $io;
+    /** @var Config */
     protected $config;
+    /** @var array<string, string> Map of origins to message displayed */
     private $displayedOriginAuthentications = array();
 
     public function __construct(IOInterface $io, Config $config)
@@ -75,6 +78,7 @@ class AuthHelper
      * @param  string[]    $headers
      * @return array|null  containing retry (bool) and storeAuth (string|bool) keys, if retry is true the request should be
      *                                retried, if storeAuth is true then on a successful retry the authentication should be persisted to auth.json
+     * @phpstan-return ?array{retry: bool, storeAuth: string|bool}
      */
     public function promptAuthIfNeeded($url, $origin, $statusCode, $reason = null, $headers = array())
     {
@@ -116,8 +120,11 @@ class AuthHelper
             $message = "\n".'Could not fetch '.$url.', enter your ' . $origin . ' credentials ' .($statusCode === 401 ? 'to access private repos' : 'to go over the API rate limit');
             $gitLabUtil = new GitLab($this->io, $this->config, null);
 
-            if ($this->io->hasAuthentication($origin) && ($auth = $this->io->getAuthentication($origin)) && in_array($auth['password'], array('gitlab-ci-token', 'private-token', 'oauth2'), true)) {
-                throw new TransportException("Invalid credentials for '" . $url . "', aborting.", $statusCode);
+            if ($this->io->hasAuthentication($origin)) {
+                $auth = $this->io->getAuthentication($origin);
+                if (in_array($auth['password'], array('gitlab-ci-token', 'private-token', 'oauth2'), true)) {
+                    throw new TransportException("Invalid credentials for '" . $url . "', aborting.", $statusCode);
+                }
             }
 
             if (!$gitLabUtil->authorizeOAuth($origin)

@@ -24,12 +24,19 @@ use Symfony\Component\Finder\Finder;
  */
 class Cache
 {
+    /** @var bool|null */
     private static $cacheCollected = null;
+    /** @var IOInterface */
     private $io;
+    /** @var string */
     private $root;
-    private $enabled = true;
+    /** @var ?bool */
+    private $enabled = null;
+    /** @var string */
     private $allowlist;
+    /** @var Filesystem */
     private $filesystem;
+    /** @var bool */
     private $readOnly;
 
     /**
@@ -48,16 +55,6 @@ class Cache
         $this->readOnly = (bool) $readOnly;
 
         if (!self::isUsable($cacheDir)) {
-            $this->enabled = false;
-
-            return;
-        }
-
-        if (
-            (!is_dir($this->root) && !Silencer::call('mkdir', $this->root, 0777, true))
-            || !is_writable($this->root)
-        ) {
-            $this->io->writeError('<warning>Cannot create cache directory ' . $this->root . ', or directory is not writable. Proceeding without cache</warning>');
             $this->enabled = false;
         }
     }
@@ -85,6 +82,18 @@ class Cache
 
     public function isEnabled()
     {
+        if ($this->enabled === null) {
+            $this->enabled = true;
+
+            if (
+                (!is_dir($this->root) && !Silencer::call('mkdir', $this->root, 0777, true))
+                || !is_writable($this->root)
+            ) {
+                $this->io->writeError('<warning>Cannot create cache directory ' . $this->root . ', or directory is not writable. Proceeding without cache</warning>');
+                $this->enabled = false;
+            }
+        }
+
         return $this->enabled;
     }
 
@@ -95,7 +104,7 @@ class Cache
 
     public function read($file)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             if (file_exists($this->root . $file)) {
                 $this->io->writeError('Reading '.$this->root . $file.' from cache', true, IOInterface::DEBUG);
@@ -109,7 +118,7 @@ class Cache
 
     public function write($file, $contents)
     {
-        if ($this->enabled && !$this->readOnly) {
+        if ($this->isEnabled() && !$this->readOnly) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
 
             $this->io->writeError('Writing '.$this->root . $file.' into cache', true, IOInterface::DEBUG);
@@ -148,7 +157,7 @@ class Cache
      */
     public function copyFrom($file, $source)
     {
-        if ($this->enabled && !$this->readOnly) {
+        if ($this->isEnabled() && !$this->readOnly) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             $this->filesystem->ensureDirectoryExists(dirname($this->root . $file));
 
@@ -169,7 +178,7 @@ class Cache
      */
     public function copyTo($file, $target)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             if (file_exists($this->root . $file)) {
                 try {
@@ -209,7 +218,7 @@ class Cache
 
     public function remove($file)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             if (file_exists($this->root . $file)) {
                 return $this->filesystem->unlink($this->root . $file);
@@ -221,7 +230,7 @@ class Cache
 
     public function clear()
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $this->filesystem->emptyDirectory($this->root);
 
             return true;
@@ -232,7 +241,7 @@ class Cache
 
     public function gc($ttl, $maxSize)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $expire = new \DateTime();
             $expire->modify('-'.$ttl.' seconds');
 
@@ -262,7 +271,7 @@ class Cache
 
     public function sha1($file)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             if (file_exists($this->root . $file)) {
                 return sha1_file($this->root . $file);
@@ -274,7 +283,7 @@ class Cache
 
     public function sha256($file)
     {
-        if ($this->enabled) {
+        if ($this->isEnabled()) {
             $file = preg_replace('{[^'.$this->allowlist.']}i', '-', $file);
             if (file_exists($this->root . $file)) {
                 return hash_file('sha256', $this->root . $file);

@@ -13,6 +13,7 @@
 namespace Composer\Test\Repository;
 
 use Composer\Package\Package;
+use Composer\Package\PackageInterface;
 use Composer\Repository\PlatformRepository;
 use Composer\Test\TestCase;
 use PHPUnit\Framework\Assert;
@@ -775,6 +776,13 @@ msgpack support => yes',
                 array(),
                 array(array('OPENSSL_VERSION_TEXT', null, 'OpenSSL 1.1.1g  21 Apr 2020')),
             ),
+            'openssl: distro peculiarities' => array(
+                'openssl',
+                null,
+                array('lib-openssl' => '1.1.1.7'),
+                array(),
+                array(array('OPENSSL_VERSION_TEXT', null, 'OpenSSL 1.1.1g-freebsd  21 Apr 2020')),
+            ),
             'openssl: two letters suffix' => array(
                 'openssl',
                 null,
@@ -1182,7 +1190,7 @@ Linked Version => 1.2.11',
         }
     }
 
-    private function assertPackageLinks($context, array $expectedLinks, Package $sourcePackage, array $links)
+    private function assertPackageLinks($context, array $expectedLinks, PackageInterface $sourcePackage, array $links)
     {
         self::assertCount(count($expectedLinks), $links, sprintf('%s: expected package count to match', $context));
 

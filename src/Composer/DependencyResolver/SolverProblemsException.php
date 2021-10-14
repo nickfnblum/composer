@@ -14,21 +14,30 @@ namespace Composer\DependencyResolver;
 
 use Composer\Util\IniHelper;
 use Composer\Repository\RepositorySet;
+use Composer\Package\PackageInterface;
 
 /**
  * @author Nils Adermann <naderman@naderman.de>
  */
 class SolverProblemsException extends \RuntimeException
 {
+    const ERROR_DEPENDENCY_RESOLUTION_FAILED = 2;
+
+    /** @var Problem[] */
     protected $problems;
+    /** @var array<Rule[]> */
     protected $learnedPool;
 
+    /**
+     * @param Problem[]          $problems
+     * @param array<Rule[]> $learnedPool
+     */
     public function __construct(array $problems, array $learnedPool)
     {
         $this->problems = $problems;
         $this->learnedPool = $learnedPool;
 
-        parent::__construct('Failed resolving dependencies with '.count($problems).' problems, call getPrettyString to get formatted details', 2);
+        parent::__construct('Failed resolving dependencies with '.count($problems).' problems, call getPrettyString to get formatted details', self::ERROR_DEPENDENCY_RESOLUTION_FAILED);
     }
 
     public function getPrettyString(RepositorySet $repositorySet, Request $request, Pool $pool, $isVerbose, $isDevExtraction = false)
@@ -108,7 +117,8 @@ class SolverProblemsException extends \RuntimeException
     {
         foreach ($reasonSets as $reasonSet) {
             foreach ($reasonSet as $rule) {
-                if (0 === strpos($rule->getRequiredPackage(), 'ext-')) {
+                $required = $rule->getRequiredPackage();
+                if (null !== $required && 0 === strpos($required, 'ext-')) {
                     return true;
                 }
             }

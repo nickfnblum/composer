@@ -20,11 +20,17 @@ use Composer\Package\Version\VersionParser;
  */
 class AliasPackage extends BasePackage
 {
+    /** @var string */
     protected $version;
+    /** @var string */
     protected $prettyVersion;
+    /** @var bool */
     protected $dev;
+    /** @var bool */
     protected $rootPackageAlias = false;
+    /** @var string */
     protected $stability;
+    /** @var bool */
     protected $hasSelfVersionRequires = false;
 
     /** @var BasePackage */
@@ -113,6 +119,7 @@ class AliasPackage extends BasePackage
 
     /**
      * {@inheritDoc}
+     * @return array<string|int, Link>
      */
     public function getConflicts()
     {
@@ -121,6 +128,7 @@ class AliasPackage extends BasePackage
 
     /**
      * {@inheritDoc}
+     * @return array<string|int, Link>
      */
     public function getProvides()
     {
@@ -129,6 +137,7 @@ class AliasPackage extends BasePackage
 
     /**
      * {@inheritDoc}
+     * @return array<string|int, Link>
      */
     public function getReplaces()
     {
@@ -167,8 +176,8 @@ class AliasPackage extends BasePackage
     }
 
     /**
-     * @param Link[] $links
-     * @param string $linkType
+     * @param Link[]       $links
+     * @param Link::TYPE_* $linkType
      *
      * @return Link[]
      */

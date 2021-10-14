@@ -20,8 +20,9 @@ use Composer\Util\Filesystem;
  */
 class ZipArchiver implements ArchiverInterface
 {
+    /** @var array<string, bool> */
     protected static $formats = array(
-        'zip' => 1,
+        'zip' => true,
     );
 
     /**
@@ -51,8 +52,9 @@ class ZipArchiver implements ArchiverInterface
 
                 /**
                  * ZipArchive::setExternalAttributesName is available from >= PHP 5.6
+                 * setExternalAttributesName() is only available with libzip 0.11.2 or above
                  */
-                if (PHP_VERSION_ID >= 50600) {
+                if (PHP_VERSION_ID >= 50600 && method_exists($zip, 'setExternalAttributesName')) {
                     $perms = fileperms($filepath);
 
                     /**

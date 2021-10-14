@@ -23,7 +23,9 @@ use Composer\Util\Perforce;
  */
 class PerforceDriver extends VcsDriver
 {
+    /** @var string */
     protected $depot;
+    /** @var string */
     protected $branch;
     /** @var ?Perforce */
     protected $perforce = null;
@@ -45,8 +47,6 @@ class PerforceDriver extends VcsDriver
 
         $this->perforce->writeP4ClientSpec();
         $this->perforce->connectClient();
-
-        return true;
     }
 
     private function initPerforce($repoConfig)
